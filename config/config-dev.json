@@ -8,7 +8,7 @@
         "DatabaseInstanceType": "db.t2.small",
         "DatabaseMasterUsername": "grandinventions",
         "DatabaseMasterPassword": "IvM8Ic2I2IwgZUrg3tKz0S9SeoB",
-        "DatabaseName": "rbcorg_production",
+        "DatabaseName": "grandinventions",
         "EfsAlarmsInstanceType": "t2.nano",
         "EfsEncrpytedBoolean": "true",
         "EfsGrowthInstanceType": "t2.nano",
