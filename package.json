@@ -1,0 +1,23 @@
+{
+  "name": "wordpress-infrastructure",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "npm run cloudformation:validate",
+    "cloudformation:validate": "./validateInfrastructure.sh",
+    "cloudformation:pipeline:dev:create": "AWS_SHARED_CREDENTIALS_FILE=../aws/credentials aws cloudformation create-stack --stack-name WordpressInfrastructure-Dev-CICD --template-body file://templates/pipeline.yaml --capabilities CAPABILITY_NAMED_IAM --parameters file://config/pipeline-config-dev.json",
+    "cloudformation:pipeline:dev:update": "AWS_SHARED_CREDENTIALS_FILE=../aws/credentials aws cloudformation update-stack --stack-name WordpressInfrastructure-Dev-CICD --template-body file://templates/pipeline.yaml --capabilities CAPABILITY_NAMED_IAM --parameters file://config/pipeline-config-dev.json",
+    "cloudformation:pipeline:prod:create": "AWS_SHARED_CREDENTIALS_FILE=../aws/credentials aws cloudformation create-stack --stack-name WordpressInfrastructure-Dev-CICD --template-body file://templates/pipeline.yaml --capabilities CAPABILITY_NAMED_IAM --parameters file://config/pipeline-config-prod.json",
+    "cloudformation:pipeline:prod:update": "AWS_SHARED_CREDENTIALS_FILE=../aws/credentials aws cloudformation update-stack --stack-name WordpressInfrastructure-Dev-CICD --template-body file://templates/pipeline.yaml --capabilities CAPABILITY_NAMED_IAM --parameters file://config/pipeline-config-prod.json"
+  },
+  "repository": {
+    "type": "git",
+    "url": "ssh://awscc-dp1/v1/repos/wordpress-infrastructure"
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "jsonlint": "^1.6.3"
+  }
+}

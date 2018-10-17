@@ -1,0 +1,11 @@
+[
+    {
+        "ParameterKey": "Environment",
+        "ParameterValue": "Dev"
+    },
+    {
+        "ParameterKey": "RepositoryName",
+        "ParameterValue": "GrandDesignCloudFormation"
+    }
+
+]

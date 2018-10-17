@@ -1,0 +1,71 @@
+version: 0.1
+
+environment_variables:
+  plaintext:
+    CHILD_TEMPLATES: |
+      wordpress-01-newvpc.yaml
+      wordpress-02-securitygroups.yaml
+      wordpress-03-bastion.yaml
+      wordpress-03-efsfilesystem.yaml
+      wordpress-03-elasticache.yaml
+      wordpress-03-efsalarms.yaml
+      wordpress-03-publicalb.yaml
+      wordpress-03-rds.yaml
+      wordpress-04-cloudfront.yaml
+      wordpress-04-web.yaml
+      wordpress-05-route53.yaml
+      wordpress-06-dashboard.yaml
+    TEMPLATE_FILES: |
+      wordpress-master.yaml
+      wordpress-01-newvpc.yaml
+      wordpress-02-securitygroups.yaml
+      wordpress-03-bastion.yaml
+      wordpress-03-efsfilesystem.yaml
+      wordpress-03-elasticache.yaml
+      wordpress-03-efsalarms.yaml
+      wordpress-03-publicalb.yaml
+      wordpress-03-rds.yaml
+      wordpress-04-cloudfront.yaml
+      wordpress-04-web.yaml
+      wordpress-05-route53.yaml
+      wordpress-06-dashboard.yaml
+    CONFIG_FILES: |
+      config-prod.json
+      config-dev.json
+
+phases:
+  install:
+    commands:
+      - npm install
+  pre_build:
+    commands:
+      - echo "Validating CloudFormation templates and config"
+      - chmod +x ./validateInfrastructure.sh
+      - npm test
+  build:
+    commands:
+      - echo "Copying child stack templates to S3"
+      - |
+        for child_template in $CHILD_TEMPLATES; do
+          if [ "X$TEMPLATE_PREFIX" = "X" ]; then
+            aws s3 cp "templates/$child_template" "s3://$TEMPLATE_BUCKET/$child_template"
+          else
+            aws s3 cp "templates/$child_template" "s3://$TEMPLATE_BUCKET/$TEMPLATE_PREFIX/$child_template"
+          fi
+        done
+      - echo "Updating template configurtion files to use the appropriate values"
+      - |
+        for conf in $CONFIG_FILES; do
+          if [ "X$TEMPLATE_PREFIX" = "X" ]; then
+            echo "Replacing \"TEMPLATE_PATH_PLACEHOLDER\" for \"$TEMPLATE_BUCKET\" in config/$conf"
+            sed -i -e "s/TEMPLATE_PATH_PLACEHOLDER/$TEMPLATE_BUCKET/" config/$conf
+          else
+            echo "Replacing \"TEMPLATE_PATH_PLACEHOLDER\" for \"$TEMPLATE_BUCKET/$TEMPLATE_PREFIX\" in config/$conf"
+            sed -i -e "s/TEMPLATE_PATH_PLACEHOLDER/$TEMPLATE_BUCKET\/$TEMPLATE_PREFIX/" config/$conf
+          fi
+        done
+
+artifacts:
+  files:
+    - templates/wordpress-master.yaml
+    - config/config-*.json

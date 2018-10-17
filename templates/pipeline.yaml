@@ -1,0 +1,314 @@
+Description: Create a CodePipeline to include Nested CloudFormation, CodeBuild and Approval steps.
+
+Parameters:
+  Environment:
+    Description: Environment suffix for services, an empty string is assumed to be production
+    ConstraintDescription: Environment must be one of 'Dev' or 'Prod'
+    Default: 'Prod'
+    MinLength: 3
+    MaxLength: 4
+    Type: String
+    AllowedValues:
+      - 'Dev'
+      - 'Prod'
+  RepositoryName:
+    Type: String
+    Description: Name of the repo which contains the templates
+
+Mappings:
+  EnvironmentIdentifier:
+    Prod:
+      Id: 'prod'
+    Dev:
+      Id: 'dev'
+  EnvironmentBranch:
+    Prod:
+      Branch: 'master'
+    Dev:
+      Branch: 'develop'
+
+Resources:
+
+  ##########################
+  # Roles
+  ##########################
+
+  # Role that Code Pipeline will run as
+  # Access to: S3, SNS, CodeCommit, CloudFormation, CodeBuild
+
+  CodePipelineServiceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: codepipeline.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: root
+          PolicyDocument:
+            Version: 2012-10-17
+            Statement:
+              # Allow codepipeline to put artifacts in the S3 bucket
+              # as well as get artifacts back out of it.
+              - Resource:
+                  - !Sub arn:aws:s3:::${ArtifactBucket}/*
+                Effect: Allow
+                Action:
+                  - s3:PutObject
+                  - s3:GetObject
+                  - s3:GetObjectVersion
+                  - s3:GetBucketVersioning
+              # Allow codepipeline to build code builds
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - iam:PassRole
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - codebuild:StartBuild
+                  - codebuild:BatchGetBuilds
+              # Allow CodePipeline to Publish to SNS Topics
+              - Resource: "*"
+                Effect: Allow
+                Action:
+                  - sns:Publish
+              # Allow codepipeline to deploy cloudformation stacks
+              - Effect: Allow
+                Action:
+                  - cloudformation:CreateChangeSet
+                  - cloudformation:CreateStack
+                  - cloudformation:CreateUploadBucket
+                  - cloudformation:DeleteStack
+                  - cloudformation:Describe*
+                  - cloudformation:List*
+                  - cloudformation:UpdateStack
+                  - cloudformation:ValidateTemplate
+                  - cloudformation:ExecuteChangeSet
+                Resource: "*"
+              # Allow codepipeline to access CodeCommit repository
+              - Effect: Allow
+                Action:
+                  - codecommit:BatchGet*
+                  - codecommit:Get*
+                  - codecommit:List*
+                  - codecommit:Describe*
+                  - codecommit:GitPull
+                  - codecommit:GitPush
+                  - codecommit:UploadArchive
+                Resource:
+                  - !Sub "arn:aws:codecommit:${AWS::Region}:${AWS::AccountId}:${RepositoryName}"
+
+  # CloudFormation deployment role. This role is passed by CodeBuild to
+  # CloudFormation to use when setting up the application resources
+  CloudFormationDeployRole:
+    Type: AWS::IAM::Role
+    Properties:
+      Path: /
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+          - Effect: Allow
+            Principal:
+              Service: cloudformation.amazonaws.com
+            Action: sts:AssumeRole
+      Policies:
+        - PolicyName: deploy-stack
+          PolicyDocument:
+            Statement:
+              - Effect: Allow
+                Action:
+                  - "application-autoscaling:*"
+                  - "autoscaling:*"
+                  - "iam:*"
+                  - "cloudfront:*"
+                  - "cloudwatch:*"
+                  - "ec2:*"
+                  - "elasticache:*"
+                  - "elasticfilesystem:*"
+                  - "elasticloadbalancing:*"
+                  - "events:*"
+                  - "autoscaling:*"
+                  - "lambda:*"
+                  - "logs:*"
+                  - "cloudwatch:*"
+                  - "route53:*"
+                  - "rds:*"
+                  - "sns:*"
+                  - "s3:*"
+                Resource: "*"
+
+  CodeBuildServiceRole:
+    Type: AWS::IAM::Role
+    Description: Creating service role in IAM for Amazon EC2 instances
+    Properties:
+      RoleName: !Sub "WordpressInfrastructure-${Environment}-CodeBuild-Role"
+      AssumeRolePolicyDocument:
+        Version: "2012-10-17"
+        Statement:
+          - Effect: Allow
+            Action: 'sts:AssumeRole'
+            Principal:
+              Service: "codebuild.amazonaws.com"
+      ManagedPolicyArns:
+        - arn:aws:iam::aws:policy/AdministratorAccess
+
+  ##########################
+  # Code Build Projects
+  ##########################
+
+  CodeBuildProject:
+    Type: AWS::CodeBuild::Project
+    DependsOn: NestedTemplateBucket
+    Properties:
+      Name: !Sub "Wordpress-Test-${Environment}"
+      Artifacts:
+        Type: CODEPIPELINE
+      Source:
+        Type: CODEPIPELINE
+        BuildSpec: buildspec.yaml
+      Environment:
+        ComputeType: small
+        Image: aws/codebuild/nodejs:10.1.0
+        Type: container
+        EnvironmentVariables:
+          - Name: AWS_DEFAULT_REGION
+            Value: !Ref AWS::Region
+          - Name: TEMPLATE_BUCKET
+            Value: !Ref NestedTemplateBucket
+      ServiceRole: !Ref CodeBuildServiceRole
+
+  ##########################
+  # CodePipeline
+  ##########################
+
+  # While the build is in progress we need a place to store artifacts
+  ArtifactBucket:
+    Type: AWS::S3::Bucket
+    Description: Creating Amazon S3 bucket for AWS CodePipeline artifacts
+    Properties:
+      LifecycleConfiguration:
+        Rules:
+          - Status: 'Enabled'
+            ExpirationInDays: 30
+      Tags:
+        - Key: Name
+          Value: !Sub "WordpressInfrastructure-${Environment}-BuildArtifacts"
+      VersioningConfiguration:
+        Status: Enabled
+
+  # We need a place to store nested templates
+  NestedTemplateBucket:
+    Type: AWS::S3::Bucket
+    Description: Creating Amazon S3 bucket for Nested Templates
+    Properties:
+      Tags:
+        - Key: Name
+          Value: !Sub "WordpressInfrastructure-${Environment}-NestedTemplates"
+      VersioningConfiguration:
+        Status: Enabled
+
+  ApprovalTopic:
+    Type: AWS::SNS::Topic
+    Properties:
+      DisplayName: WordpressInfrastructure-${Environment}-ApprovalTopic
+      TopicName: !Sub "WordpressInfrastructure-${Environment}-approval"
+
+  DeployPipeline:
+    Type: "AWS::CodePipeline::Pipeline"
+    Properties:
+      Name: !Sub "Wordpress-${Environment}"
+      RoleArn: !GetAtt CodePipelineServiceRole.Arn
+      ArtifactStore:
+        Type: S3
+        Location: !Ref ArtifactBucket
+      Stages:
+
+        - Name: Source
+          Actions:
+            - Name: CloudFormationSource
+              ActionTypeId:
+                Category: Source
+                Owner: ThirdParty
+                Version: 1
+                Provider: GitHub
+              OutputArtifacts:
+                - Name: !Sub "Wordpress-${Environment}-SourceArtifact"
+              Configuration:
+                Branch: !FindInMap [ EnvironmentBranch, !Ref Environment, 'Branch' ]
+                Repo: !Ref 'RepositoryName'
+                OAuthToken: 00d161f18513012ca600725dbe03c85de18a6250
+                Owner: clarkwebtech
+              RunOrder: 1
+
+        - Name: Build
+          Actions:
+            - Name: CodeBuild
+              ActionTypeId:
+                Category: Build
+                Owner: AWS
+                Version: 1
+                Provider: CodeBuild
+              InputArtifacts:
+                - Name: !Sub "Wordpress-${Environment}-SourceArtifact"
+              OutputArtifacts:
+                - Name: !Sub "Wordpress-${Environment}-BuildArtifact"
+              Configuration:
+                ProjectName: !Sub "Wordpress-Test-${Environment}"
+              RunOrder: 1
+
+        - Name: Deploy
+          Actions:
+
+            - Name: CreateChangeSet
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              InputArtifacts:
+                - Name: !Sub "Wordpress-${Environment}-BuildArtifact"
+              OutputArtifacts:
+                - Name: CloudFormationChangeSet
+              Configuration:
+                ActionMode: CHANGE_SET_REPLACE
+                ChangeSetName: !Sub "WordpressInfrastructure-${Environment}-ChangeSet"
+                RoleArn:
+                  Fn::GetAtt: [ CloudFormationDeployRole, Arn ]
+                Capabilities: CAPABILITY_NAMED_IAM
+                StackName: !Sub "WordpressInfrastructure-${Environment}"
+                TemplateConfiguration:
+                  !Sub
+                    - "Wordpress-${EnvironmentFull}-BuildArtifact::config/config-${EnvironmentID}.json"
+                    - { EnvironmentFull: !Ref Environment, EnvironmentID: !FindInMap [ EnvironmentIdentifier, !Ref Environment, 'Id' ] }
+                TemplatePath: !Sub "Wordpress-${Environment}-BuildArtifact::templates/wordpress-master.yaml"
+              RunOrder: 1
+
+            - Name: DeployApproval
+              ActionTypeId:
+                Category: Approval
+                Owner: AWS
+                Version: 1
+                Provider: Manual
+              Configuration:
+                NotificationArn: !Ref ApprovalTopic
+                CustomData: Approve deployment in production.
+              RunOrder: 2
+
+            - Name: DeployProduction
+              InputArtifacts:
+                - Name: CloudFormationChangeSet
+              ActionTypeId:
+                Category: Deploy
+                Owner: AWS
+                Version: 1
+                Provider: CloudFormation
+              Configuration:
+                ActionMode: CHANGE_SET_EXECUTE
+                ChangeSetName: !Sub "WordpressInfrastructure-${Environment}-ChangeSet"
+                StackName: !Sub "WordpressInfrastructure-${Environment}"
+              RunOrder: 3
