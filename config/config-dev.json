@@ -2,7 +2,7 @@
     "Parameters": {
         "TemplatePath": "TEMPLATE_PATH_PLACEHOLDER",
         "Environment": "Dev",
-        "BastionInstanceType": "t3.nano",
+        "BastionInstanceType": "t2.nano",
         "CloudFrontAcmCertificate": "arn:aws:acm:us-east-1:531826849259:certificate/f8c72983-bb01-4aa6-bccf-b915dc4746f2",
         "DatabaseEncrpytedBoolean": "true",
         "DatabaseInstanceType": "db.t2.small",
