@@ -506,7 +506,6 @@ Resources:
             apt:
              # awslogs: []
               apache2: []
-           #   nginx: []
               mysql-client-5.7: []
               php7.0: []
               php7.0-dev: []
@@ -515,12 +514,6 @@ Resources:
               php7.0-soap: []
               php7.0-zip: []
               awscli: []
-              libapache2-mod-php7.0: []
-              libapache2-mod-php: []
-          files:
-            /etc/nginx/sites-available/default:
-              content:
-                !Join
           files:
             /tmp/create_site_conf.sh:
               content:
@@ -530,10 +523,7 @@ Resources:
                     "exec > /tmp/create_site_conf.log 2>&1\n",
                     "if [ ! -f /etc/apache2/sites-available/", !Ref WPDirectory, ".conf ]; then\n",
                     "   touch /etc/apache2/sites-available/", !Ref WPDirectory, ".conf\n",
-                    "   echo '<VirtualHost 127.0.0.1:80>\n'",
-                    "   echo '\t ServerName 127.0.0.1:80' >> /etc/apache2/sites-available/", !Ref WPDirectory, ".conf\n",
-                    "   echo 'ServerAlias ", !Ref WPDomainName, "'",
-                    "   echo '</VirtualHost>'",
+                    "   echo 'ServerName 127.0.0.1:80' >> /etc/apache2/sites-available/", !Ref WPDirectory, ".conf\n",
                     "   echo 'DocumentRoot /var/www/wordpress/", !Ref WPDirectory, "' >> /etc/apache2/sites-available/", !Ref WPDirectory, ".conf\n",
                     "   echo '<Directory /var/www/wordpress/", !Ref WPDirectory, ">' >> /etc/apache2/sites-available/", !Ref WPDirectory, ".conf\n",
                     "   echo '  Options Indexes FollowSymLinks' >> /etc/apache2/sites-available/", !Ref WPDirectory, ".conf\n",
@@ -562,16 +552,15 @@ Resources:
                   #!/bin/bash -xe
                   # ln -s /usr/bin/pecl7 /usr/bin/pecl #just so pecl is available easily
                   exec > /tmp/install_cacheclient.log 2>&1
-                  module_dir=$(php-config --extension-dir)
                   pecl install igbinary
                   wget -P /tmp/ https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/AmazonElastiCacheClusterClient-2.0.1-PHP70-64bit.tar.gz
                   tar -xf '/tmp/AmazonElastiCacheClusterClient-2.0.1-PHP70-64bit.tar.gz'
-                  cp '/tmp/artifact/amazon-elasticache-cluster-client.so' "$module_dir"
+                  cp '/tmp/artifact/amazon-elasticache-cluster-client.so' "${php-config --extension-dir}"
                   if [ ! -f /etc/php/7.0/mods-available/memcached.ini ]; then
                       touch /etc/php/7.0/mods-available/memcached.ini
                   fi
                   echo 'extension=igbinary.so;' >> /etc/php/7.0/mods-available/memcached.ini
-                  echo 'extension="$module_dir"/amazon-elasticache-cluster-client.so;' >> /etc/php/7.0/mods-available/memcached.ini
+                  echo 'extension=/usr/lib64/php/7.0/modules/amazon-elasticache-cluster-client.so;' >> /etc/php/7.0/mods-available/memcached.ini
                   phpenmod -v 7.0 memcached
               mode: 000500
               owner: root
@@ -590,14 +579,13 @@ Resources:
                   if [ ! -d /var/www/.opcache ]; then
                       mkdir -p /var/www/.opcache
                   fi
-                  # enable opcache in /etc/php/7.0/mods-available
-                  sed -i 's/;opcache.file_cache=.*/opcache.file_cache=\/var\/www\/.opcache/' /etc/php/7.0/mods-available/opcache.ini
-                  sed -i 's/opcache.memory_consumption=.*/opcache.memory_consumption=512/' /etc/php/7.0/mods-available/opcache.ini
+                  # enable opcache in /etc/php/7.0/fpm/conf.d/10-opcache.ini
+                  sed -i 's/;opcache.file_cache=.*/opcache.file_cache=\/var\/www\/.opcache/' /etc/php/7.0/fpm/conf.d/10-opcache.ini
+                  sed -i 's/opcache.memory_consumption=.*/opcache.memory_consumption=512/' /etc/php/7.0/fpm/conf.d/10-opcache.ini
                   # download opcache-instance.php to verify opcache status
                   if [ ! -f /var/www/wordpress/${WPDirectory}/opcache-instanceid.php ]; then
                       wget -P /var/www/wordpress/${WPDirectory}/ https://s3.amazonaws.com/aws-refarch/wordpress/latest/bits/opcache-instanceid.php
                   fi
-                  phpenmod -v 7.0 opcache
               mode: 000500
               owner: root
               group: root
@@ -627,7 +615,7 @@ Resources:
                     "       wp core download --version='", !Ref WPVersion, "' --locale='", !Ref WPLocale, "' --allow-root\n",
                     "       wp core config --dbname='", !Ref DatabaseName, "' --dbuser='", !Ref DatabaseMasterUsername, "' --dbpass='", !Ref DatabaseMasterPassword, "' --dbhost='", !Ref DatabaseClusterEndpointAddress, "' --dbprefix=wp_ --allow-root\n",
                     "       wp core install --url=", !If [ NoWPDomainName, !Ref PublicAlbHostname, !Join [ "", [ "'http://www.", !Ref WPDomainName, "'" ] ] ], " --title='", !Ref WPTitle, "' --admin_user='", !Ref WPAdminUsername, "' --admin_password='", !Ref WPAdminPassword, "' --admin_email='", !Ref WPAdminEmail, "' --skip-email --allow-root\n",
-                    "       wp plugin install w3-total-cache --allow-root\n",
+                    "       wp plugin install w3-total-cache\n",
                     "       sed -i \"/$table_prefix = 'wp_';/ a \\define('WP_HOME', 'http://' . \\$_SERVER['HTTP_HOST']); \" /var/www/wordpress/", !Ref WPDirectory, "/wp-config.php\n",
                     "       sed -i \"/$table_prefix = 'wp_';/ a \\define('WP_SITEURL', 'http://' . \\$_SERVER['HTTP_HOST']); \" /var/www/wordpress/", !Ref WPDirectory, "/wp-config.php\n",
                     "       # enable HTTPS in wp-config.php if ACM Public SSL Certificate parameter was not empty\n",
@@ -692,11 +680,11 @@ Resources:
               cwd: /tmp
               ignoreErrors: false
         start_webserver:
-          commands:
-            start_webserver:
-              command: "systemctl start apache2.service"
-              cwd: '/tmp'
-              ignoreErrors: false
+          services:
+            sysvinit:
+              apache2:
+                enabled: true
+                ensureRunning: true
     Properties:
       IamInstanceProfile: !Ref WebInstanceProfile
       ImageId: !FindInMap [ RegionMap, !Ref 'AWS::Region', AMI ]

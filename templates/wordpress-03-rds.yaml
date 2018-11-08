@@ -169,19 +169,13 @@ Resources:
       DatabaseName: !Ref DatabaseName
       DBSubnetGroupName: !Ref DataSubnetGroup
       Engine: aurora
-      EngineMode: serverless
-      ScalingConfiguration:
-        AutoPause: true
-        MaxCapacity: 4
-        MinCapacity: 2
-        SecondsUntilAutoPause: 3600
       KmsKeyId:
         !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref DatabaseCmk ]
-      MasterUsername: !Ref DatabaseMasterUsername
-      MasterUserPassword: !Ref DatabaseMasterPassword
+     #  MasterUsername: !Ref DatabaseMasterUsername
+     #  MasterUserPassword: !Ref DatabaseMasterPassword
       Port: 3306
       StorageEncrypted: !Ref DatabaseEncrpytedBoolean
-      SnapshotIdentifier: !Ref 'AWS::NoValue'
+      SnapshotIdentifier: 'arn:aws:rds:us-east-1:068206000572:cluster-snapshot:rds:wpcluster-2018-10-30-06-33' # TODO, make this a param
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'WordPress / ', !Ref 'AWS::StackName' ] ]

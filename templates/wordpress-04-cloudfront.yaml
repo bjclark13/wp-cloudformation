@@ -95,265 +95,14 @@ Resources:
           - PATCH
           - POST
           - PUT
-          DefaultTTL: 31536000
-          MaxTTL: 86400
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: false
-            Headers:
-            - Host
-          TargetOriginId: elb
-          ViewerProtocolPolicy: allow-all
-          Compress: true
-        - PathPattern: wp-json/*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 1800
-          MaxTTL: 3600
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - Authorization
-            - CloudFront-Viewer-Country
-            - Host
-            - X-Country
-            - X-Time-Zone
-            - X-WP-Nonce
-            Cookies:
-              Forward: 'whitelist'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          LambdaFunctionAssociations:
-            # - EventType: viewer-request
-            #   LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:cfPassHeaders:5
-            - EventType: origin-request
-              LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:countryHeaders:24
-          TargetOriginId: elb
-          ViewerProtocolPolicy: allow-all
-          Compress: true
-        - PathPattern: wp-login.php*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
+          DefaultTTL: 900
+          MaxTTL: 900
+          MinTTL: 900
           ForwardedValues:
             QueryString: true
             Headers:
             - Host
-            Cookies:
-              Forward: 'all'
           TargetOriginId: elb
-          ViewerProtocolPolicy: allow-all
-          Compress: true
-        # Don't cache anything on the admin side
-        # TODO: add intelligent caching around
-        # admin-ajax GET requests
-        - PathPattern: wp-admin*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - '*'
-            Cookies:
-              Forward: 'all'
-          TargetOriginId: elb
-          ViewerProtocolPolicy: allow-all
-          Compress: true
-        # Cache home page for one hour, to
-        # reduce time zone related issues
-        - PathPattern: /
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 1800
-          MaxTTL: 3600
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - Authorization
-            - CloudFront-Viewer-Country
-            - Host
-            - X-Country
-            - X-Time-Zone
-            - X-WP-Nonce
-            Cookies:
-              Forward: 'whitelist'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          LambdaFunctionAssociations:
-            # - EventType: viewer-request
-            #   LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:cfPassHeaders:5
-            - EventType: origin-request
-              LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:countryHeaders:24
-          TargetOriginId: elb
-          ViewerProtocolPolicy: allow-all
-          Compress: true
-        - PathPattern: /20*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 1800
-          MaxTTL: 3600
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            QueryStringCacheKeys:
-              - tz
-              - user-country
-            Headers:
-            - CloudFront-Viewer-Country
-            - Host
-            - X-Country
-            Cookies:
-              Forward: 'whitelist'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          LambdaFunctionAssociations:
-            # - EventType: viewer-request
-            #   LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:cfPassHeaders:5
-            - EventType: origin-request
-              LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:countryHeaders:24
-          TargetOriginId: elb
-          ViewerProtocolPolicy: allow-all
-          Compress: true
-        # More broad caching for DS courses, don't need any
-        # country or timezone headers
-        - PathPattern: /courses/*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 1800
-          MaxTTL: 31536000
-          MinTTL: 86400
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - Host
-            Cookies:
-              Forward: 'whitelist'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          TargetOriginId: elb
-          ViewerProtocolPolicy: allow-all
-          Compress: true
-        # Send mpxdownloads to PHP 5 admin server
-        - PathPattern: /mpx/*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - '*'
-            Cookies:
-              Forward: 'all'
-          TargetOriginId: varnish-prod
-          ViewerProtocolPolicy: allow-all
-          Compress: true
-        # Send CET request to PHP 5 admin server
-        - PathPattern: /content*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - '*'
-            Cookies:
-              Forward: 'all'
-          TargetOriginId: varnish-prod
           ViewerProtocolPolicy: allow-all
           Compress: true
         Comment: !Ref 'AWS::StackName'
@@ -366,35 +115,15 @@ Resources:
           - PATCH
           - POST
           - PUT
-          DefaultTTL: 14400
-          MaxTTL: 14400
+          DefaultTTL: 0
+          MaxTTL: 0
           MinTTL: 0
           ForwardedValues:
             QueryString: true
             Headers:
-            - Authorization
-            - CloudFront-Viewer-Country
-            - Host
-            - X-Country
-            - X-Time-Zone
+            - '*'
             Cookies:
-              Forward: 'none'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          LambdaFunctionAssociations:
-            # - EventType: viewer-request
-            #   LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:cfPassHeaders:5
-            - EventType: origin-request
-              LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:countryHeaders:24
+              Forward: all
           TargetOriginId: elb
           ViewerProtocolPolicy: allow-all
           Compress: true
@@ -403,21 +132,11 @@ Resources:
         - DomainName: !Ref PublicAlbDnsName
           Id: elb
           CustomOriginConfig:
-            OriginProtocolPolicy: match-viewer
-            OriginKeepaliveTimeout: 5
-            OriginReadTimeout: 30
-        # Legacy Varnish-facing environment
-        # TODO: get this value based on Tag/Name
-        - DomainName: ec2-35-174-170-28.compute-1.amazonaws.com
-          Id: varnish-prod
-          CustomOriginConfig:
-            OriginProtocolPolicy: match-viewer
-            OriginKeepaliveTimeout: 60
-            OriginReadTimeout: 60
+            OriginProtocolPolicy: http-only
         PriceClass: PriceClass_100
   CloudFrontDistributionSslCertificate:
     Type: AWS::CloudFront::Distribution
-    Condition: NoSslCertificate
+    Condition: SslCertificate
     Properties:
       DistributionConfig:
         Aliases:
@@ -451,265 +170,14 @@ Resources:
           - PATCH
           - POST
           - PUT
-          DefaultTTL: 31536000
-          MaxTTL: 86400
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: false
-            Headers:
-            - Host
-          TargetOriginId: elb
-          ViewerProtocolPolicy: redirect-to-https
-          Compress: true
-        - PathPattern: wp-json/*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 1800
-          MaxTTL: 3600
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - Authorization
-            - CloudFront-Viewer-Country
-            - Host
-            - X-Country
-            - X-Time-Zone
-            - X-WP-Nonce
-            Cookies:
-              Forward: 'whitelist'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          LambdaFunctionAssociations:
-            # - EventType: viewer-request
-            #   LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:cfPassHeaders:5
-            - EventType: origin-request
-              LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:countryHeaders:24
-          TargetOriginId: elb
-          ViewerProtocolPolicy: redirect-to-https
-          Compress: true
-        - PathPattern: wp-login.php*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
+          DefaultTTL: 900
+          MaxTTL: 900
+          MinTTL: 900
           ForwardedValues:
             QueryString: true
             Headers:
             - Host
-            Cookies:
-              Forward: 'all'
           TargetOriginId: elb
-          ViewerProtocolPolicy: redirect-to-https
-          Compress: true
-        # Don't cache anything on the admin side
-        # TODO: add intelligent caching around
-        # admin-ajax GET requests
-        - PathPattern: wp-admin*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - '*'
-            Cookies:
-              Forward: 'all'
-          TargetOriginId: elb
-          ViewerProtocolPolicy: redirect-to-https
-          Compress: true
-        # Cache home page for one hour, to
-        # reduce time zone related issues
-        - PathPattern: /
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 1800
-          MaxTTL: 3600
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - Authorization
-            - CloudFront-Viewer-Country
-            - Host
-            - X-Country
-            - X-Time-Zone
-            - X-WP-Nonce
-            Cookies:
-              Forward: 'whitelist'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          LambdaFunctionAssociations:
-            # - EventType: viewer-request
-            #   LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:cfPassHeaders:5
-            - EventType: origin-request
-              LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:countryHeaders:24
-          TargetOriginId: elb
-          ViewerProtocolPolicy: redirect-to-https
-          Compress: true
-        - PathPattern: /20*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 86400
-          MaxTTL: 31536000
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            QueryStringCacheKeys:
-              - tz
-              - user-country
-            Headers:
-            - CloudFront-Viewer-Country
-            - Host
-            - X-Country
-            Cookies:
-              Forward: 'whitelist'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          LambdaFunctionAssociations:
-            # - EventType: viewer-request
-            #   LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:cfPassHeaders:5
-            - EventType: origin-request
-              LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:countryHeaders:24
-          TargetOriginId: elb
-          ViewerProtocolPolicy: redirect-to-https
-          Compress: true
-        # More broad caching for DS courses, don't need any
-        # country or timezone headers
-        - PathPattern: /courses/*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 1800
-          MaxTTL: 31536000
-          MinTTL: 86400
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - Host
-            Cookies:
-              Forward: 'whitelist'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          TargetOriginId: elb
-          ViewerProtocolPolicy: redirect-to-https
-          Compress: true
-        # Send mpxdownloads to PHP 5 admin server
-        - PathPattern: /mpx/*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - '*'
-            Cookies:
-              Forward: 'all'
-          TargetOriginId: varnish-prod
-          ViewerProtocolPolicy: redirect-to-https
-          Compress: true
-        # Send CET request to PHP 5 admin server
-        - PathPattern: /content*
-          AllowedMethods:
-          - DELETE
-          - GET
-          - HEAD
-          - OPTIONS
-          - PATCH
-          - POST
-          - PUT
-          DefaultTTL: 0
-          MaxTTL: 0
-          MinTTL: 0
-          ForwardedValues:
-            QueryString: true
-            Headers:
-            - '*'
-            Cookies:
-              Forward: 'all'
-          TargetOriginId: varnish-prod
           ViewerProtocolPolicy: redirect-to-https
           Compress: true
         Comment: !Ref 'AWS::StackName'
@@ -722,35 +190,15 @@ Resources:
           - PATCH
           - POST
           - PUT
-          DefaultTTL: 14400
-          MaxTTL: 14400
+          DefaultTTL: 0
+          MaxTTL: 0
           MinTTL: 0
           ForwardedValues:
             QueryString: true
             Headers:
-            - Authorization
-            - CloudFront-Viewer-Country
-            - Host
-            - X-Country
-            - X-Time-Zone
+            - '*'
             Cookies:
-              Forward: 'none'
-              WhitelistedNamed:
-                - comment_author_*
-                - comment_author_email_*
-                - comment_author_url_*
-                - jetpack*
-                - jpp*
-                - test_case
-                - woocommerce_*
-                - wordpress_*
-                - wp-settings-*
-                - wp_woocommerce_session_*
-          LambdaFunctionAssociations:
-            # - EventType: viewer-request
-            #   LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:cfPassHeaders:5
-            - EventType: origin-request
-              LambdaFunctionARN: arn:aws:lambda:us-east-1:068206000572:function:countryHeaders:24
+              Forward: all
           TargetOriginId: elb
           ViewerProtocolPolicy: redirect-to-https
           Compress: true
@@ -759,18 +207,12 @@ Resources:
         - DomainName: !Ref PublicAlbDnsName
           Id: elb
           CustomOriginConfig:
-            OriginProtocolPolicy: match-viewer
-            OriginKeepaliveTimeout: 5
-            OriginReadTimeout: 30
-        # Legacy Varnish-facing environment
-        # TODO: get this value based on Tag/Name
-        - DomainName: ec2-35-174-170-28.compute-1.amazonaws.com
-          Id: varnish-prod
-          CustomOriginConfig:
-            OriginProtocolPolicy: match-viewer
-            OriginKeepaliveTimeout: 60
-            OriginReadTimeout: 60
+            OriginProtocolPolicy: https-only
         PriceClass: PriceClass_100
+        ViewerCertificate:
+          AcmCertificateArn: !Ref CloudFrontAcmCertificate
+          SslSupportMethod: sni-only
+          MinimumProtocolVersion: TLSv1
 
 Outputs:
 

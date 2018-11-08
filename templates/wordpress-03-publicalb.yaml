@@ -170,7 +170,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /wp-login.php # TODO: use path that is going to guarantee 200 Status Code
+      HealthCheckPath: / # TODO: use path that is going to guarantee 200 Status Code
       HealthCheckTimeoutSeconds: 5
       Port: 80
       Protocol: HTTP
