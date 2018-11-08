@@ -173,7 +173,7 @@ Resources:
       ScalingConfiguration:
         AutoPause: true
         MaxCapacity: 8
-        MinCapacity: 0
+        MinCapacity: 2
         SecondsUntilAutoPause: 300
       KmsKeyId:
         !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref DatabaseCmk ]
