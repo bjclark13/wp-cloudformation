@@ -172,7 +172,7 @@ Resources:
       EngineMode: serverless
       ScalingConfiguration:
         AutoPause: true
-        MaxCapacity: 5
+        MaxCapacity: 8
         MinCapacity: 0
         SecondsUntilAutoPause: 300
       KmsKeyId:
